@@ -219,8 +219,14 @@ export interface CodingProblem {
     input: string
     output: string
   }>
-  companyTags: string[]
+  test_cases?: Array<{
+    input: string
+    output: string
+  }>
+  companyTags?: string[]
+  company_tags?: string[]
   acceptanceRate?: number
+  acceptance_rate?: number | null
 }
 
 export type SubmissionStatus = 'ACCEPTED' | 'WRONG_ANSWER' | 'TIME_LIMIT_EXCEEDED' | 'RUNTIME_ERROR' | 'COMPILATION_ERROR'
