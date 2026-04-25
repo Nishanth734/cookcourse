@@ -31,6 +31,25 @@ type CodingSubmissionRecord = {
   status: string
 }
 
+// Accept both camelCase and snake_case variants
+type CodingProblemInput = {
+  title: string
+  topic: string
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD'
+  description: string
+  examples: Array<{ input: string; output: string; explanation?: string }>
+  constraints: string
+  hints: string[]
+  editorial?: string | null
+  testCases?: Array<{ input: string; output: string }>
+  test_cases?: Array<{ input: string; output: string }>
+  hidden_test_cases?: { requiredPatterns?: string[]; forbiddenPatterns?: string[]; minLength?: number }
+  companyTags?: string[]
+  company_tags?: string[]
+  acceptanceRate?: number
+  acceptance_rate?: number | null
+}
+
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unexpected error'
 }
@@ -200,21 +219,22 @@ export async function GET(request: Request) {
 
       const insertedProblems = await Promise.all(
         drafts.map(async (problem) => {
+          const problemInput = problem as unknown as CodingProblemInput
           const { data, error } = await supabaseAdmin
             .from('coding_problems')
             .insert({
-              title: problem.title,
-              topic: problem.topic,
-              difficulty: problem.difficulty,
-              description: problem.description,
-              examples: problem.examples,
-              constraints: problem.constraints,
-              hints: problem.hints,
-              editorial: problem.editorial ?? null,
-              test_cases: problem.testCases ?? problem.test_cases ?? [],
-              hidden_test_cases: problem.hidden_test_cases ?? { minLength: 30 },
-              company_tags: problem.companyTags ?? problem.company_tags ?? [],
-              acceptance_rate: problem.acceptanceRate ?? problem.acceptance_rate ?? null,
+              title: problemInput.title,
+              topic: problemInput.topic,
+              difficulty: problemInput.difficulty,
+              description: problemInput.description,
+              examples: problemInput.examples,
+              constraints: problemInput.constraints,
+              hints: problemInput.hints,
+              editorial: problemInput.editorial ?? null,
+              test_cases: problemInput.testCases ?? problemInput.test_cases ?? [],
+              hidden_test_cases: problemInput.hidden_test_cases ?? { minLength: 30 },
+              company_tags: problemInput.companyTags ?? problemInput.company_tags ?? [],
+              acceptance_rate: problemInput.acceptanceRate ?? problemInput.acceptance_rate ?? null,
             })
             .select()
             .single()
