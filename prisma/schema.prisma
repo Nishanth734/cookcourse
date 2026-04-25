@@ -1,0 +1,467 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Core Models
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  password          String
+  role              Role      @default(USER)
+  avatar            String?
+  bio               String?
+  college           String?
+  graduationYear    Int?
+  targetRole        String?
+  targetCompanies   String[]
+  skillLevel        SkillLevel @default(BEGINNER)
+  dailyStudyHours   Float     @default(2.0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  profile           UserProfile?
+  roadmaps          Roadmap[]
+  bookmarks         Bookmark[]
+  notes             UserNote[]
+  quizAttempts      QuizAttempt[]
+  codingSubmissions CodingSubmission[]
+  interviews        MockInterview[]
+  userProjects      UserProject[]
+  resumes           Resume[]
+  planner           DailyPlanner[]
+  achievements      Achievement[]
+  streaks           Streak[]
+  communityPosts    CommunityPost[]
+  studyCircles      StudyCircleMember[]
+}
+
+model UserProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentTopic      String?
+  progress          Json?
+  weakTopics        String[]
+  strongTopics      String[]
+  readinessScores   Json?
+  totalStudyHours   Float     @default(0)
+  consistencyStreak Int       @default(0)
+  badges            String[]
+}
+
+model Roadmap {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic             String
+  skillLevel        SkillLevel
+  targetCompany     String?
+  targetTimeline    DateTime?
+  phases            Json      // Array of phases with subtopics
+  status            RoadmapStatus @default(ACTIVE)
+  createdAt         DateTime  @default(now())
+  
+  phaseProgress     PhaseProgress[]
+}
+
+model PhaseProgress {
+  id                String    @id @default(cuid())
+  roadmapId         String
+  roadmap           Roadmap   @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  phaseName         String
+  completed         Boolean   @default(false)
+  completedAt       DateTime?
+  subtopics         Json?
+}
+
+model Resource {
+  id                String    @id @default(cuid())
+  title             String
+  description       String
+  type              ResourceType
+  topic             String
+  difficulty        DifficultyLevel
+  platform          String
+  instructor        String?
+  duration          String?
+  rating            Float?
+  price             PriceType
+  language          String    @default("English")
+  url               String
+  thumbnail         String?
+  tags              String[]
+  createdAt         DateTime  @default(now())
+  
+  bookmarks         Bookmark[]
+}
+
+model Bookmark {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resourceId        String?
+  resource          Resource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  noteId            String?
+  note              UserNote? @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  createdAt         DateTime  @default(now())
+
+  @@unique([userId, resourceId])
+  @@unique([userId, noteId])
+}
+
+model UserNote {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic             String
+  title             String
+  content           String
+  type              NoteType
+  isImportant       Boolean   @default(false)
+  revisionCount     Int       @default(0)
+  lastRevised       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  bookmarks         Bookmark[]
+}
+
+model Quiz {
+  id                String    @id @default(cuid())
+  title             String
+  topic             String
+  difficulty        DifficultyLevel
+  questionCount     Int
+  timeLimit         Int?
+  questions         Json      // Array of questions
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  
+  attempts          QuizAttempt[]
+}
+
+model QuizAttempt {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId            String
+  quiz              Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  score             Float
+  answers           Json
+  completedAt       DateTime  @default(now())
+  timeTaken         Int?
+}
+
+model CodingProblem {
+  id                String    @id @default(cuid())
+  title             String
+  topic             String
+  difficulty        DifficultyLevel
+  description       String
+  examples          Json
+  constraints       String
+  hints             String[]
+  editorial         String?
+  testCases         Json
+  hiddenTestCases   Json
+  companyTags       String[]
+  acceptanceRate    Float?
+  createdAt         DateTime  @default(now())
+  
+  submissions       CodingSubmission[]
+}
+
+model CodingSubmission {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId         String
+  problem           CodingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  code              String
+  language          String
+  status            SubmissionStatus
+  runtime           Int?
+  memory            Int?
+  submittedAt       DateTime  @default(now())
+}
+
+model MockInterview {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              InterviewType
+  topic             String
+  questions         Json
+  responses         Json?
+  feedback          Json?
+  scores            Json?
+  status            InterviewStatus @default(COMPLETED)
+  createdAt         DateTime  @default(now())
+}
+
+model Project {
+  id                String    @id @default(cuid())
+  title             String
+  description       String
+  topic             String
+  difficulty        DifficultyLevel
+  techStack         String[]
+  features          String[]
+  milestones        Json
+  githubStructure   String?
+  deploymentGuide   String?
+  resumeValue       String?
+  interviewPoints   String[]
+  createdAt         DateTime  @default(now())
+  
+  userProjects      UserProject[]
+}
+
+model UserProject {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status            ProjectStatus @default(NOT_STARTED)
+  githubUrl         String?
+  deployedUrl       String?
+  aiReview          Json?
+  startedAt         DateTime?
+  completedAt       DateTime?
+}
+
+model PlacementStory {
+  id                String    @id @default(cuid())
+  name              String
+  company           String
+  role              String
+  college           String?
+  background        String?
+  timeline          String
+  resourcesUsed     String[]
+  projects          String[]
+  mistakes          String[]
+  interviewExp      String
+  tips              String[]
+  imageUrl          String?
+  createdAt         DateTime  @default(now())
+}
+
+model Resume {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role              String
+  content           Json
+  atsScore          Float?
+  recruiterScore    Float?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model DailyPlanner {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime
+  tasks             Json
+  completed         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+}
+
+model Achievement {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge             String
+  title             String
+  description       String
+  earnedAt          DateTime  @default(now())
+}
+
+model Streak {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime
+  activityType      String
+  count             Int       @default(1)
+}
+
+model CommunityPost {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic             String
+  title             String
+  content           String
+  type              PostType
+  upvotes           Int       @default(0)
+  comments          Json?
+  createdAt         DateTime  @default(now())
+}
+
+model StudyCircle {
+  id                String    @id @default(cuid())
+  name              String
+  topic             String
+  members           Json
+  createdBy         String
+  createdAt         DateTime  @default(now())
+}
+
+model StudyCircleMember {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  circleId          String
+  joinedAt          DateTime  @default(now())
+}
+
+model CompanyTrack {
+  id                String    @id @default(cuid())
+  companyName       String
+  interviewPattern  Json
+  topics            String[]
+  difficulty        DifficultyLevel
+  aptitudeRounds    Json?
+  roundBreakdown    Json
+  expectedProjects  String[]
+  resumeExpectations String[]
+  createdAt         DateTime  @default(now())
+}
+
+model MentorBooking {
+  id                String    @id @default(cuid())
+  userId            String
+  mentorId          String
+  topic             String
+  scheduledAt       DateTime
+  status            BookingStatus @default(PENDING)
+  notes             String?
+  createdAt         DateTime  @default(now())
+}
+
+model JobApplication {
+  id                String    @id @default(cuid())
+  userId            String
+  company           String
+  role              String
+  url               String
+  status            ApplicationStatus @default(APPLIED)
+  appliedAt         DateTime  @default(now())
+  notes             String?
+}
+
+// Enums
+enum Role {
+  USER
+  ADMIN
+  MENTOR
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum RoadmapStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum ResourceType {
+  VIDEO
+  ARTICLE
+  COURSE
+  PLAYLIST
+  BOOK
+  DOC
+  CODING_SHEET
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum PriceType {
+  FREE
+  PAID
+  FREEMIUM
+}
+
+enum NoteType {
+  SUMMARY
+  CHEAT_SHEET
+  FLASHCARD
+  CUSTOM
+  AI_GENERATED
+}
+
+enum SubmissionStatus {
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+}
+
+enum InterviewType {
+  TECHNICAL
+  DSA
+  HR
+  BEHAVIORAL
+  SYSTEM_DESIGN
+  COMMUNICATION
+  ROLE_SPECIFIC
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  UNDER_REVIEW
+}
+
+enum PostType {
+  QUESTION
+  DISCUSSION
+  NOTE_SHARE
+  DOUBT
+  TIPS
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SHORTLISTED
+  INTERVIEW
+  OFFER
+  REJECTED
+}
