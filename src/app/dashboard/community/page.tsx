@@ -100,7 +100,7 @@ export default function CommunityPage() {
             likes: 0,
             commentsCount: 0,
             time: 'Just now',
-          },
+          } as CommunityPost,
           ...previous,
         ])
       }
