@@ -30,6 +30,21 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unexpected error'
 }
 
+function normalizeTags(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    return value
+      .split('|')
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+  }
+
+  return []
+}
+
 function isUUID(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
@@ -104,6 +119,7 @@ export async function GET(request: Request) {
     const resources = ((resourcesData ?? []) as ResourceRecord[])
       .map((resource) => ({
         ...resource,
+        tags: normalizeTags(resource.tags),
         bookmarked: bookmarkIds.has(resource.id),
       }))
       .filter((resource) => !bookmarkedOnly || resource.bookmarked)

@@ -63,7 +63,7 @@ export default function PlacementStoriesPage() {
 
   const metrics = useMemo(() => {
     const companies = new Set(stories.map((story) => story.company)).size
-    const tips = stories.reduce((sum, story) => sum + story.tips.length, 0)
+    const tips = stories.reduce((sum, story) => sum + (story.tips?.length || 0), 0)
     return { stories: stories.length, companies, tips }
   }, [stories])
 
